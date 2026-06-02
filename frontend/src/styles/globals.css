@@ -1,0 +1,115 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=JetBrains+Mono:wght@400;500&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-cream text-ink font-body;
+    min-height: 100vh;
+  }
+
+  h1, h2, h3 {
+    @apply font-display;
+    letter-spacing: -0.01em;
+  }
+
+  h4, h5, h6 {
+    @apply font-heading font-medium;
+  }
+
+  ::selection {
+    @apply bg-gold/20 text-ink;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-ink-100;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-ink-300 rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gold;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center gap-2 px-5 py-2.5 bg-ink text-cream 
+           font-heading font-medium text-sm rounded-lg
+           hover:bg-ink-800 active:scale-95
+           transition-all duration-150
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/50;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-ink-200
+           text-ink font-heading font-medium text-sm rounded-lg
+           hover:border-ink hover:bg-ink-50 active:scale-95
+           transition-all duration-150;
+  }
+
+  .btn-gold {
+    @apply inline-flex items-center gap-2 px-5 py-2.5 bg-gold text-white 
+           font-heading font-medium text-sm rounded-lg
+           hover:bg-gold-500 active:scale-95
+           transition-all duration-150 shadow-glow-gold;
+  }
+
+  .card {
+    @apply bg-white rounded-xl border border-ink-100 shadow-card
+           hover:shadow-card-hover transition-shadow duration-200;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-2.5 bg-white border border-ink-200 rounded-lg
+           text-ink text-sm font-body
+           placeholder:text-ink-400
+           focus:outline-none focus:border-ink focus:ring-1 focus:ring-ink/10
+           transition-colors duration-150;
+  }
+
+  .label {
+    @apply block text-xs font-heading font-medium text-ink-500 uppercase tracking-wider mb-1.5;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-2xs font-heading font-medium uppercase tracking-wide;
+  }
+
+  .badge-draft     { @apply bg-ink-100 text-ink-500; }
+  .badge-published { @apply bg-sage-100 text-sage-600; }
+  .badge-hot       { @apply bg-red-100 text-red-600; }
+  .badge-warm      { @apply bg-amber-100 text-amber-700; }
+  .badge-cold      { @apply bg-blue-100 text-blue-600; }
+
+  .shimmer-bg {
+    background: linear-gradient(90deg, #f0ede8 25%, #f8f5f0 50%, #f0ede8 75%);
+    background-size: 200% 100%;
+    animation: shimmer 2s linear infinite;
+  }
+
+  .sidebar-link {
+    @apply flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-heading font-medium
+           text-ink-500 hover:text-ink hover:bg-ink-50
+           transition-colors duration-150 cursor-pointer;
+  }
+
+  .sidebar-link.active {
+    @apply text-ink bg-gold/10 hover:bg-gold/15;
+  }
+}

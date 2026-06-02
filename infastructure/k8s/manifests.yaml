@@ -1,0 +1,433 @@
+# EstateEdge — Kubernetes Manifests
+# Deploy to AWS EKS
+# Apply with: kubectl apply -f infrastructure/k8s/
+
+---
+# ─── Namespace ────────────────────────────────────────────────────────────────
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: estateedge
+  labels:
+    app: estateedge
+
+---
+# ─── Config Maps ──────────────────────────────────────────────────────────────
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: estateedge-config
+  namespace: estateedge
+data:
+  NODE_ENV: "production"
+  POSTGRES_HOST: "estateedge-postgres-svc"
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: "estateedge"
+  KAFKA_BROKERS: "estateedge-kafka-svc:9092"
+  ELASTICSEARCH_URL: "http://estateedge-es-svc:9200"
+  REDIS_URL: "redis://estateedge-redis-svc:6379"
+  # Service URLs (internal cluster)
+  USER_SERVICE_URL: "http://user-service-svc:4003"
+  SITE_SERVICE_URL: "http://site-service-svc:4001"
+  AI_SERVICE_URL: "http://ai-service-svc:4002"
+  ANALYTICS_SERVICE_URL: "http://analytics-service-svc:4004"
+
+---
+# ─── Secrets (use AWS Secrets Manager + External Secrets Operator in prod) ────
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: estateedge-secrets
+  namespace: estateedge
+type: Opaque
+stringData:
+  POSTGRES_USER: "estateedge"
+  POSTGRES_PASSWORD: "CHANGE_IN_PRODUCTION"
+  JWT_SECRET: "CHANGE_IN_PRODUCTION_USE_256BIT_RANDOM"
+  ANTHROPIC_API_KEY: "sk-ant-CHANGE_IN_PRODUCTION"
+
+---
+# ─── Gateway Deployment ───────────────────────────────────────────────────────
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  namespace: estateedge
+  labels:
+    app: gateway
+    tier: api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: gateway
+  template:
+    metadata:
+      labels:
+        app: gateway
+    spec:
+      containers:
+        - name: gateway
+          image: estateedge/gateway:latest
+          ports:
+            - containerPort: 4000
+          envFrom:
+            - configMapRef:
+                name: estateedge-config
+            - secretRef:
+                name: estateedge-secrets
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 4000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 4000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway-svc
+  namespace: estateedge
+spec:
+  selector:
+    app: gateway
+  ports:
+    - port: 4000
+      targetPort: 4000
+  type: ClusterIP
+
+---
+# ─── Site Service Deployment ──────────────────────────────────────────────────
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: site-service
+  namespace: estateedge
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: site-service
+  template:
+    metadata:
+      labels:
+        app: site-service
+    spec:
+      containers:
+        - name: site-service
+          image: estateedge/site-service:latest
+          ports:
+            - containerPort: 4001
+          env:
+            - name: PORT
+              value: "4001"
+            - name: SERVICE_NAME
+              value: "site-service"
+          envFrom:
+            - configMapRef:
+                name: estateedge-config
+            - secretRef:
+                name: estateedge-secrets
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+            limits:
+              memory: "512Mi"
+              cpu: "400m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 4001
+            initialDelaySeconds: 20
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: site-service-svc
+  namespace: estateedge
+spec:
+  selector:
+    app: site-service
+  ports:
+    - port: 4001
+      targetPort: 4001
+
+---
+# ─── AI Service Deployment ────────────────────────────────────────────────────
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-service
+  namespace: estateedge
+spec:
+  replicas: 3          # More replicas since AI calls are CPU/network heavy
+  selector:
+    matchLabels:
+      app: ai-service
+  template:
+    metadata:
+      labels:
+        app: ai-service
+    spec:
+      containers:
+        - name: ai-service
+          image: estateedge/ai-service:latest
+          ports:
+            - containerPort: 4002
+          env:
+            - name: PORT
+              value: "4002"
+            - name: SERVICE_NAME
+              value: "ai-service"
+          envFrom:
+            - configMapRef:
+                name: estateedge-config
+            - secretRef:
+                name: estateedge-secrets
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "500m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 4002
+            initialDelaySeconds: 20
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-service-svc
+  namespace: estateedge
+spec:
+  selector:
+    app: ai-service
+  ports:
+    - port: 4002
+      targetPort: 4002
+
+---
+# ─── User Service Deployment ──────────────────────────────────────────────────
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  namespace: estateedge
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      containers:
+        - name: user-service
+          image: estateedge/user-service:latest
+          ports:
+            - containerPort: 4003
+          env:
+            - name: PORT
+              value: "4003"
+            - name: SERVICE_NAME
+              value: "user-service"
+          envFrom:
+            - configMapRef:
+                name: estateedge-config
+            - secretRef:
+                name: estateedge-secrets
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+            limits:
+              memory: "512Mi"
+              cpu: "400m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 4003
+            initialDelaySeconds: 15
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service-svc
+  namespace: estateedge
+spec:
+  selector:
+    app: user-service
+  ports:
+    - port: 4003
+      targetPort: 4003
+
+---
+# ─── Analytics Service Deployment ────────────────────────────────────────────
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analytics-service
+  namespace: estateedge
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: analytics-service
+  template:
+    metadata:
+      labels:
+        app: analytics-service
+    spec:
+      containers:
+        - name: analytics-service
+          image: estateedge/analytics-service:latest
+          ports:
+            - containerPort: 4004
+          env:
+            - name: PORT
+              value: "4004"
+            - name: SERVICE_NAME
+              value: "analytics-service"
+          envFrom:
+            - configMapRef:
+                name: estateedge-config
+            - secretRef:
+                name: estateedge-secrets
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+            limits:
+              memory: "512Mi"
+              cpu: "400m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: analytics-service-svc
+  namespace: estateedge
+spec:
+  selector:
+    app: analytics-service
+  ports:
+    - port: 4004
+      targetPort: 4004
+
+---
+# ─── HorizontalPodAutoscalers ─────────────────────────────────────────────────
+
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: ai-service-hpa
+  namespace: estateedge
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ai-service
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 65
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: gateway-hpa
+  namespace: estateedge
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: gateway
+  minReplicas: 2
+  maxReplicas: 8
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+
+---
+# ─── Ingress (AWS ALB) ───────────────────────────────────────────────────────
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: estateedge-ingress
+  namespace: estateedge
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:us-east-1:ACCOUNT_ID:certificate/CERT_ID"
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+    alb.ingress.kubernetes.io/healthcheck-path: /health
+spec:
+  rules:
+    - host: api.estateedge.io
+      http:
+        paths:
+          - path: /graphql
+            pathType: Prefix
+            backend:
+              service:
+                name: gateway-svc
+                port:
+                  number: 4000
+          - path: /health
+            pathType: Prefix
+            backend:
+              service:
+                name: gateway-svc
+                port:
+                  number: 4000
+    - host: track.estateedge.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: analytics-service-svc
+                port:
+                  number: 4004
