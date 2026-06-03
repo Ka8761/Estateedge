@@ -269,9 +269,10 @@ app.post('/generate', async (req, res) => {
         const { site: spec, tokensUsed, durationMs } = aiRes.data.data;
 
         console.log('STEP 6: building site');
+        
 
         const siteId = await buildSiteFromSpec(
-          spec,
+          aiRes.data.data.site.websiteSpec,
           userId,
           jobId,
           tokensUsed,
@@ -289,6 +290,11 @@ app.post('/generate', async (req, res) => {
           'STEP 8: returning job',
           JSON.stringify(job, null, 2)
         );
+  
+        console.log(
+  "FULL WEBSITE SPEC:",
+  JSON.stringify(spec, null, 2)
+);
 
         return res.status(201).json({ data: job });
 
@@ -352,6 +358,7 @@ async function buildSiteFromSpec(
   tokensUsed?: number,
   durationMs?: number
 ): Promise<string> {
+  
   return await withTransaction(async (client) => {
     const siteId = uuidv4();
     const rawName = String(spec.name ?? 'My Real Estate Site');
@@ -366,29 +373,62 @@ async function buildSiteFromSpec(
        JSON.stringify(spec.seo ?? {})]
     );
 
-    const pages =
+  const rawPages =
   Array.isArray(spec.pages)
     ? spec.pages
     : typeof spec.pages === "string"
       ? JSON.parse(spec.pages)
       : [];
-    for (let i = 0; i < pages.length; i++) {
-      const p = pages[i];
-      await client.query(
-        `INSERT INTO pages (id, site_id, title, slug, page_type, content, seo, sort_order, status)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'published')`,
-        [uuidv4(), siteId,
-         String(p.title ?? `Page ${i + 1}`),
-         String(p.slug ?? `page-${i}`),
-         String(p.pageType ?? 'custom'),
-         JSON.stringify({ blocks: p.blocks ?? [] }),
-         JSON.stringify(p.seo ?? {}),
-         i]
-      );
 
-    }
+const normalizedPages = rawPages.map((p: any, index: number) => ({
+  title: p.title ?? p.name,
+
+  slug:
+    p.slug ??
+    p.url?.replace(/^\/+/, '') ??
+    `page-${index}`,
+
+  pageType: p.pageType ?? 'custom',
+
+  blocks: p.blocks ?? p.contentSections ?? [],
+
+  seo: {
+    title: p.name,
+    description: Array.isArray(p.contentSections)
+      ? String(p.contentSections[0]).slice(0, 160)
+      : '',
+  },
+}));
+    for (let i = 0; i < normalizedPages.length; i++) {
+  const p = normalizedPages[i];
+
+  await client.query(
+    `INSERT INTO pages (
+      id,
+      site_id,
+      title,
+      slug,
+      page_type,
+      content,
+      seo,
+      sort_order,
+      status
+    )
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'published')`,
+    [
+      uuidv4(),
+      siteId,
+      p.title,
+      p.slug,
+      p.pageType,
+      JSON.stringify({ blocks: p.blocks }),
+      JSON.stringify(p.seo),
+      i,
+    ]
+  );
+}
       console.log("📄 RAW SPEC PAGES:", spec.pages);
-console.log("📄 PARSED PAGES:", pages);
+console.log("📄 PARSED PAGES:", normalizedPages);
 
     await client.query(
       `UPDATE generation_jobs
@@ -397,7 +437,7 @@ console.log("📄 PARSED PAGES:", pages);
       [siteId, tokensUsed ?? null, durationMs ?? null, jobId]
     );
 
-    console.log(`[Site Service] Built site ${siteId} (${pages.length} pages) from job ${jobId}`);
+    console.log(`[Site Service] Built site ${siteId} (${normalizedPages.length} pages) from job ${jobId}`);
     return siteId;
   });
 }

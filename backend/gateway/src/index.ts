@@ -92,9 +92,9 @@ const typeDefs = `#graphql
   }
 
   type GeneratedContent {
-    content: String!
-    tokensUsed: Int!
-    model: String!
+    content: String
+    tokensUsed: Int
+    model: String
   }
 
   type MarketReport {
