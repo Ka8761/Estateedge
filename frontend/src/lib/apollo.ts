@@ -5,11 +5,9 @@ import { setContext } from '@apollo/client/link/context';
 import { gql } from '@apollo/client';
 
 // ─── Client Setup ─────────────────────────────────────────────────────────────
-
 const httpLink = createHttpLink({
-  uri:'http://localhost:4000/graphql',
+  uri: import.meta.env.VITE_GRAPHQL_URL ?? 'https://estateedge-site-service.onrender.com/graphql',
 });
-console.log(import.meta.env.VITE_GRAPHQL_URL);
 
 const authLink = setContext((_, { headers }) => {
   const token = localStorage.getItem('ee_access_token');
