@@ -7,7 +7,7 @@ import { gql } from '@apollo/client';
 // ─── Client Setup ─────────────────────────────────────────────────────────────
 
 const httpLink = createHttpLink({
-  uri: import.meta.env.VITE_GRAPHQL_URL ?? 'http://localhost:4000/graphql',
+  uri: import.meta.env.VITE_GRAPHQL_URL ?? 'https://estateedge-site-service.onrender.com/graphql',
 });
 
 const authLink = setContext((_, { headers }) => {

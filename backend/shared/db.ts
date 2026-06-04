@@ -1,18 +1,29 @@
 
 import { Pool, PoolClient, QueryResult, QueryResultRow } from 'pg';
 
+// const pool = new Pool({
+//   host: process.env.POSTGRES_HOST ?? 'localhost',
+//   port: parseInt(process.env.POSTGRES_PORT ?? '5432'),
+//   database: process.env.POSTGRES_DB ?? 'postgres',
+//   user: process.env.POSTGRES_USER ?? 'postgres',
+//   password: process.env.POSTGRES_PASSWORD ?? 'estateedge_secret',
+//   max: parseInt(process.env.POSTGRES_POOL_MAX ?? '20'),
+//   idleTimeoutMillis: 30000,
+//   connectionTimeoutMillis: 5000,
+//   ssl: process.env.NODE_ENV === 'production'
+//     ? { rejectUnauthorized: true }
+//     : false,
+// });
+
 const pool = new Pool({
-  host: process.env.POSTGRES_HOST ?? 'localhost',
-  port: parseInt(process.env.POSTGRES_PORT ?? '5432'),
-  database: process.env.POSTGRES_DB ?? 'postgres',
-  user: process.env.POSTGRES_USER ?? 'postgres',
-  password: process.env.POSTGRES_PASSWORD ?? 'estateedge_secret',
+  connectionString: process.env.DATABASE_URL,
   max: parseInt(process.env.POSTGRES_POOL_MAX ?? '20'),
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,
-  ssl: process.env.NODE_ENV === 'production'
-    ? { rejectUnauthorized: true }
-    : false,
+  ssl:
+    process.env.NODE_ENV === 'production'
+      ? { rejectUnauthorized: false }
+      : false,
 });
 
 pool.on('error', (err) => {
