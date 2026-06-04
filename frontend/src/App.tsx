@@ -17,7 +17,6 @@ import { AnalyticsPage } from './pages/AnalyticsPage';
 import { AIAssistantPage } from './pages/AIAssistantPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { GenerateSitePage } from './pages/GenerateSitePage';
-import './App.css';
 
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
