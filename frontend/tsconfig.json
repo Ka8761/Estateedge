@@ -22,6 +22,7 @@
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "target": "ESNext",
+      "jsx": "react-jsx",
     "lib": ["ESNext", "DOM"],
     "types": ["vite/client"]
   }
