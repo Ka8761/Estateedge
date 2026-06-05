@@ -28,7 +28,7 @@ app.post('/leads', async (req, res) => {
     const { siteId, email, firstName, lastName, phone, message, source, metadata } = req.body;
 
     if (!siteId || !email) {
-      return res.status(400).json({ error: 'siteId and email are required' });
+      return res.status(400).json({ error: 'siteId and.. email are required' });
     }
 
     // Resolve user_id from site
