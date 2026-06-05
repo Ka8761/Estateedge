@@ -409,10 +409,6 @@ async function bootstrap() {
   await server.start();
 
   app.use(helmet({ contentSecurityPolicy: false }));
-  app.use(cors({
-    origin: (process.env.FRONTEND_URL ?? 'http://localhost:3000').split(','),
-    credentials: true,
-  }));
 
   app.get('/health', (_req, res) => {
     res.json({ service: 'gateway', status: 'ok', timestamp: new Date().toISOString() });
