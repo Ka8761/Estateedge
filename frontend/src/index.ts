@@ -5,9 +5,9 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import { v4 as uuidv4 } from 'uuid';
-import { query, queryOne, queryMany } from '../../shared/db';
-import { publishEvent, startConsumer } from '../../shared/kafka';
-import { KAFKA_TOPICS } from '../../shared/types';
+import { query, queryOne, queryMany } from '../../backend/shared/db';
+import { publishEvent, startConsumer } from '../../backend/shared/kafka';
+import { KAFKA_TOPICS } from '../../backend/shared/types';
 
 const app = express();
 const PORT = process.env.PORT ?? 4004;
