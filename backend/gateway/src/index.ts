@@ -418,13 +418,17 @@ async function bootstrap() {
     res.json({ service: 'gateway', status: 'ok', timestamp: new Date().toISOString() });
   });
 
-  app.use(
-    '/graphql',
-    json(),
-    expressMiddleware(server, {
-      context: async ({ req }) => buildContext(req),
-    })
-  );
+app.use(
+  '/graphql',
+  cors({
+    origin: (process.env.FRONTEND_URL ?? 'http://localhost:5173').split(','),
+    credentials: true,
+  }),
+  json(),
+  expressMiddleware(server, {
+    context: async ({ req }) => buildContext(req),
+  })
+);
 
   app.listen(PORT, () => {
     console.log(`[Gateway] GraphQL ready at http://localhost:${PORT}/graphql`);

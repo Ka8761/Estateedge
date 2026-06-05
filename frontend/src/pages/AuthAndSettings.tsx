@@ -163,7 +163,6 @@ const handleSubmit = async (e: React.FormEvent) => {
     const { user, accessToken, refreshToken } = result.data.register;
 
     login(user, accessToken, refreshToken);
-    console.log('LOGIN SECRET=', process.env.JWT_SECRET);
     localStorage.setItem('ee_access_token', accessToken);
     localStorage.setItem("refreshToken", refreshToken);
     navigate('/sites/generate');
