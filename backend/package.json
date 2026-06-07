@@ -1,0 +1,20 @@
+{
+  "name": "estateedge-monorepo-root",
+  "version": "1.0.0",
+  "scripts": {
+    "build:user": "cd services/user-service && npm install",
+    "start:user": "cd services/user-service && node index.js",
+    
+    "build:site": "cd services/site-service && npm install",
+    "start:site": "cd services/site-service && node index.js",
+
+        "build:ai": "cd services/ai-service && npm install",
+    "start:ai": "cd services/ai-service && node index.js",
+
+    "build:analytics": "cd services/analytics-service && npm install",
+    "start:analytics": "cd services/analytics-service && node index.js",
+    
+    "build:gateway": "cd gateway && npm install",
+    "start:gateway": "cd gateway && node index.js"
+  }
+}

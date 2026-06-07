@@ -13,7 +13,9 @@ import { scoreLeadWithAI } from '../scoreLead';
 import { generateMarketReport } from '../generateMarketReport';
 import { checkDbHealth } from '../../../shared/db';
 const app = express();
-const PORT = process.env.AI_SERVICE_PORT ?? 4002;
+
+const PORT = process.env.PORT ?? process.env.AI_SERVICE_URL ?? 4002;
+
 
 app.use(helmet());
 app.use(cors());

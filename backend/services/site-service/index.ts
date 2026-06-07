@@ -7,9 +7,9 @@ import axios from 'axios';
 import { query, queryOne, queryMany, withTransaction, checkDbHealth } from '../../shared/db';
 import { publishEvent, startConsumer } from '../../shared/kafka';
 import { KAFKA_TOPICS, SiteGenerationInput } from '../../shared/types';
-
+//cd services/site-service && npm install axios && npm install && chmod +x ./node_modules/.bin/tsc && ./node_modules/.bin/tsc index.ts --target es2022 --module commonjs --outDir ./dist --skipLibCheck true --esModuleInterop true
 const app = express();
-const PORT = process.env.SITE_SERVICE_URL ?? 4001;
+const PORT = process.env.PORT ?? process.env.SITE_SERVICE_URL ?? 4001;
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL ?? 'http://localhost:4002';
 // const KAFKA_ENABLED = process.env.KAFKA_ENABLED !== 'false';
 const KAFKA_ENABLED = process.env.KAFKA_ENABLED === 'true';
@@ -24,6 +24,8 @@ app.get('/health', async (_req, res) => {
   const dbOk = await checkDbHealth();
   res.json({ service: 'site-service', status: dbOk ? 'ok' : 'degraded', timestamp: new Date().toISOString() });
 });
+//npm install --prefix shared && cd services/site-service && npm install axios && npm install && chmod +x ./node_modules/.bin/tsc && ./node_modules/.bin/tsc index.ts --target es2022 --module commonjs --skipLibCheck true --esModuleInterop true 
+// cd services/site-service && node index.js worked
 
 // ─── Sites ────────────────────────────────────────────────────────────────────
 
